@@ -10,6 +10,7 @@ target_link_libraries(${TARGET}
     PRIVATE
         ${NAMESPACE}Core::${NAMESPACE}Core
         ${NAMESPACE}VirtualInput::${NAMESPACE}VirtualInput
+        ${NAMESPACE}COM::${NAMESPACE}COM
         ${EGL_LIBRARIES}
 )
 
