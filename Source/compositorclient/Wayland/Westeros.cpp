@@ -31,9 +31,6 @@
 // logical xor
 #define XOR(a, b) ((!a && b) || (a && !b))
 
-static PFNEGLCREATEIMAGEKHRPROC eglCreateImagePtr;
-static PFNEGLDESTROYIMAGEKHRPROC eglDestroyImagePtr;
-
 using namespace WPEFramework;
 
 #define Trace(fmt, args...) fprintf(stderr, "[pid=%d][Client %s:%d] : " fmt, getpid(), __FILE__, __LINE__, ##args)
@@ -689,28 +686,13 @@ namespace Wayland {
         : _refcount(1)
         , _display(&display)
     {
-       EGLenum target;
-       _eglExtension = eglQueryString(_display->_eglDisplay, EGL_EXTENSIONS);
-       if (strstr(_eglExtension, "EGL_KHR_image_base")) {
-               eglCreateImagePtr = reinterpret_cast<PFNEGLCREATEIMAGEKHRPROC>(eglGetProcAddress("eglCreateImageKHR"));
-               target = EGL_GL_TEXTURE_2D_KHR;
-       } else {
-               eglCreateImagePtr = reinterpret_cast<PFNEGLCREATEIMAGEKHRPROC>(eglGetProcAddress("eglCreateImage"));
-               target = EGL_GL_TEXTURE_2D;
-        }
-        _eglImageKHR = eglCreateImagePtr(_display->_eglDisplay, _display->_eglContext, target,
-            reinterpret_cast<EGLClientBuffer>(texture), 0);
+       eglImageKHR = _display->CreateImage(reinterpret_cast<EGLClientBuffer>(texture));
     }
 
     Display::ImageImplementation::~ImageImplementation()
     {
         if (_display != nullptr) {
-                if (strstr(_eglExtension, "EGL_KHR_image_base")) {
-                        eglDestroyImagePtr = reinterpret_cast<PFNEGLDESTROYIMAGEKHRPROC>(eglGetProcAddress("eglDestroyImageKHR"));
-                } else {
-                        eglDestroyImagePtr = reinterpret_cast<PFNEGLDESTROYIMAGEKHRPROC>(eglGetProcAddress("eglDestroyImage"));
-                }
-        eglDestroyImagePtr(_display->_eglDisplay, _eglImageKHR);
+            _display->DestroyImage(_eglImageKHR);
 	}
     }
 
@@ -863,6 +845,17 @@ namespace Wayland {
                             _eglContext = eglCreateContext(_eglDisplay, _eglConfig, EGL_NO_CONTEXT, attributes);
 
                             Trace("Context created\n");
+
+                            const char* extension = eglQueryString(_eglDisplay, EGL_EXTENSIONS);    
+                            if (strstr(m_extension, "EGL_KHR_image_base")) {
+                                _eglCreateImagePtr = reinterpret_cast<PFNEGLCREATEIMAGEKHRPROC>(eglGetProcAddress("eglCreateImageKHR"));
+                                _eglDestroyImagePtr = reinterpret_cast<PFNEGLDESTROYIMAGEKHRPROC>(eglGetProcAddress("eglDestroyImageKHR"));
+                                _target = EGL_GL_TEXTURE_2D_KHR;
+                            } else {
+                                _eglCreateImagePtr = reinterpret_cast<PFNEGLCREATEIMAGEKHRPROC>(eglGetProcAddress("eglCreateImage"));
+                                _eglDestroyImagePtr = reinterpret_cast<PFNEGLDESTROYIMAGEKHRPROC>(eglGetProcAddress("eglDestroyImage"));
+                                _target = EGL_GL_TEXTURE_2D;
+                            }
                         }
                     }
                 }

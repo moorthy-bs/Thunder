@@ -267,7 +267,6 @@ namespace Wayland {
             uint32_t _refcount;
             EGLImageKHR _eglImageKHR;
             Display* _display;
-            const char* _eglExtension;
         };
 
         typedef std::map<const uint32_t, SurfaceImplementation*> SurfaceMap;
@@ -294,6 +293,9 @@ namespace Wayland {
             , _eglDisplay(EGL_NO_DISPLAY)
             , _eglConfig(0)
             , _eglContext(EGL_NO_CONTEXT)
+            , _target(EGL_GL_TEXTURE_2D)
+            , _eglCreateImagePtr(nullptr)
+            , _eglDestroyImagePtr(nullptr)
             , _collect(false)
             , _surfaces()
             , _physical()
@@ -631,6 +633,14 @@ namespace Wayland {
         {
             sem_post(&_redraw);
         }
+        inline EGLImageKHR CreateImage(const EGLClientBuffer& texture) {
+            assert (_eglCreateImagePtr != nullptr);
+            return (_eglCreateImagePtr(_eglDisplay, _eglContext, _target, texture, 0));
+        }
+        inline EGLImageKHR DestroyImage(const EGLImageKHR& image) {
+            assert (_eglDestroyImagePtr != nullptr);
+            return (_eglDestroyImagePtr(_eglDisplay, image));
+        }
 
     private:
         void Initialize();
@@ -771,6 +781,9 @@ namespace Wayland {
         EGLDisplay _eglDisplay;
         EGLConfig _eglConfig;
         EGLContext _eglContext;
+        EGLenum _target;
+        PFNEGLCREATEIMAGEKHRPROC _eglCreateImagePtr;
+        PFNEGLDESTROYIMAGEKHRPROC _eglDestroyImagePtr;
 
         // Abstraction representations
         int _threadId;
