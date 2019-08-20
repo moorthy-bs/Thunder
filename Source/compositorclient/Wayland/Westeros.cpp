@@ -686,7 +686,7 @@ namespace Wayland {
         : _refcount(1)
         , _display(&display)
     {
-       eglImageKHR = _display->CreateImage(reinterpret_cast<EGLClientBuffer>(texture));
+       _eglImageKHR = _display->CreateImage(reinterpret_cast<EGLClientBuffer>(texture));
     }
 
     Display::ImageImplementation::~ImageImplementation()
@@ -847,7 +847,7 @@ namespace Wayland {
                             Trace("Context created\n");
 
                             const char* extension = eglQueryString(_eglDisplay, EGL_EXTENSIONS);    
-                            if (strstr(m_extension, "EGL_KHR_image_base")) {
+                            if (strstr(extension, "EGL_KHR_image_base")) {
                                 _eglCreateImagePtr = reinterpret_cast<PFNEGLCREATEIMAGEKHRPROC>(eglGetProcAddress("eglCreateImageKHR"));
                                 _eglDestroyImagePtr = reinterpret_cast<PFNEGLDESTROYIMAGEKHRPROC>(eglGetProcAddress("eglDestroyImageKHR"));
                                 _target = EGL_GL_TEXTURE_2D_KHR;

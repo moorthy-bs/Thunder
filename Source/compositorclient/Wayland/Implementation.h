@@ -637,7 +637,7 @@ namespace Wayland {
             assert (_eglCreateImagePtr != nullptr);
             return (_eglCreateImagePtr(_eglDisplay, _eglContext, _target, texture, 0));
         }
-        inline EGLImageKHR DestroyImage(const EGLImageKHR& image) {
+        inline EGLBoolean DestroyImage(const EGLImageKHR& image) {
             assert (_eglDestroyImagePtr != nullptr);
             return (_eglDestroyImagePtr(_eglDisplay, image));
         }
