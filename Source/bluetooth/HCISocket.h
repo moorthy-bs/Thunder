@@ -217,17 +217,10 @@ namespace Bluetooth {
 
                     if (hdr->evt == EVT_CMD_STATUS) {
                         const evt_cmd_status* cs = reinterpret_cast<const evt_cmd_status*>(ptr);
-                        if (cs->opcode == OPCODE) {
-
-                            if (RESPONSECODE == EVT_CMD_STATUS) {
-                                _error = (cs->status != 0 ? Core::ERROR_GENERAL : Core::ERROR_NONE);
-                            } else if (cs->status != 0) {
-                                _error = cs->status;
-                            }
+                        if ( (cs->opcode == OPCODE) && (RESPONSECODE == EVT_CMD_STATUS) ) {
+                            _error = (cs->status != 0 ? Core::ERROR_GENERAL : Core::ERROR_NONE);
                             result = length;
-                            TRACE(Trace::Information, (_T(">>EVT_CMD_STATUS: %X-%03X expected: %d"), (cs->opcode >> 10) & 0xF, (cs->opcode & 0x3FF), cs->status ));
-                        } else {
-                            TRACE(Trace::Information, (_T(">>EVT_CMD_STATUS: %X-%03X unexpected: %d"), (cs->opcode >> 10) & 0xF, (cs->opcode & 0x3FF), cs->status));
+                            TRACE_L1(_T(">>EVT_CMD_STATUS: %X-%03X Result: %d"), (OPCODE >> 10) & 0xF, (OPCODE & 0x3FF), cs->status);
                         }
                     } else if (hdr->evt == EVT_CMD_COMPLETE) {
                         const evt_cmd_complete* cc = reinterpret_cast<const evt_cmd_complete*>(ptr);
@@ -240,23 +233,19 @@ namespace Bluetooth {
                                 _error = Core::ERROR_NONE;
                             }
                             result = length;
-                            TRACE(Trace::Information, (_T(">>EVT_CMD_COMPLETED: %X-%03X expected: %d"), (cc->opcode >> 10) & 0xF, (cc->opcode & 0x3FF), _error));
-                        } else {
-                            TRACE(Trace::Information, (_T(">>EVT_CMD_COMPLETED: %X-%03X unexpected: %d"), (cc->opcode >> 10) & 0xF, (cc->opcode & 0x3FF), _error));
-                        }
+                            TRACE_L1(_T(">>EVT_CMD_COMPLETED: %X-%03X expected: %d"), (OPCODE >> 10) & 0xF, (OPCODE & 0x3FF), _error);
+                        } 
                     } else if ((hdr->evt == EVT_LE_META_EVENT) && (((OPCODE >> 10) & 0x3F) == OGF_LE_CTL)) {
                         const evt_le_meta_event* eventMetaData = reinterpret_cast<const evt_le_meta_event*>(ptr);
 
                         if (eventMetaData->subevent == RESPONSECODE) {
-                            TRACE(Trace::Information, (_T(">>EVT_COMPLETE: expected")));
-
                             uint16_t toCopy = std::min(static_cast<uint16_t>(sizeof(INBOUND)), static_cast<uint16_t>(len - EVT_LE_META_EVENT_SIZE));
                             ::memcpy(reinterpret_cast<uint8_t*>(&_response), &(ptr[EVT_LE_META_EVENT_SIZE]), toCopy);
 
                             _error = Core::ERROR_NONE;
                             result = length;
-                        } else {
-                            TRACE(Trace::Information, (_T(">>EVT_COMPLETE: unexpected [%d]"), eventMetaData->subevent));
+
+                            TRACE_L1(_T(">>EVT_CMD_COMPLETED: %X-%03X expected: %d"), (OPCODE >> 10) & 0xF, (OPCODE & 0x3FF), _error);
                         }
                     }
                 }
@@ -357,18 +346,33 @@ namespace Bluetooth {
         // ------------------------------------------------------------------------
         // Create definitions for the HCI commands
         // ------------------------------------------------------------------------
+        struct write_stored_link_key_cp {
+            uint8_t id;
+            uint8_t address[6];
+            uint8_t key[16];
+        };
+
         struct Command {
             typedef CommandType<cmd_opcode_pack(OGF_LINK_CTL, OCF_CREATE_CONN), create_conn_cp, evt_conn_complete, EVT_CONN_COMPLETE>
                 Connect;
 
-            typedef CommandType<cmd_opcode_pack(OGF_LINK_CTL, OCF_AUTH_REQUESTED), auth_requested_cp, evt_auth_complete, EVT_AUTH_COMPLETE>
-                Authenticate;
+            typedef CommandType<cmd_opcode_pack(OGF_LE_CTL, OCF_LE_CREATE_CONN), le_create_connection_cp, evt_le_connection_complete, EVT_LE_CONN_COMPLETE>
+                ConnectLE;
 
             typedef CommandType<cmd_opcode_pack(OGF_LINK_CTL, OCF_DISCONNECT), disconnect_cp, evt_disconn_complete, EVT_DISCONN_COMPLETE>
                 Disconnect;
 
-            typedef CommandType<cmd_opcode_pack(OGF_LE_CTL, OCF_LE_CREATE_CONN), le_create_connection_cp, evt_le_connection_complete, EVT_LE_CONN_COMPLETE>
-                ConnectLE;
+            typedef CommandType<cmd_opcode_pack(OGF_HOST_CTL, OCF_READ_STORED_LINK_KEY), read_stored_link_key_cp, Core::Void, EVT_CMD_STATUS>
+                ReadLinkKey;
+
+            typedef CommandType<cmd_opcode_pack(OGF_HOST_CTL, OCF_WRITE_STORED_LINK_KEY), write_stored_link_key_cp, Core::Void, EVT_CMD_STATUS>
+                WriteLinkKey;
+
+            typedef CommandType<cmd_opcode_pack(OGF_HOST_CTL, OCF_CHANGE_CONN_LINK_KEY), change_conn_link_key_cp, evt_change_conn_link_key_complete, EVT_CHANGE_CONN_LINK_KEY_COMPLETE>
+                ChangeLinkKey;
+
+            typedef CommandType<cmd_opcode_pack(OGF_LINK_CTL, OCF_AUTH_REQUESTED), auth_requested_cp, evt_auth_complete, EVT_AUTH_COMPLETE>
+                Authenticate;
 
             typedef CommandType<cmd_opcode_pack(OGF_LE_CTL, OCF_LE_START_ENCRYPTION), le_start_encryption_cp, uint8_t, EVT_LE_CONN_COMPLETE>
                 EncryptLE;
@@ -475,6 +479,7 @@ namespace Bluetooth {
         {
             return ((_state & ADVERTISING) != 0);
         }
+        
         uint32_t Config(const bool powered, const bool bondable, const bool advertising, const bool simplePairing, const bool lowEnergy, const bool secure);
         uint32_t Advertising(const bool enable, const uint8_t mode = 0);
         void Scan(const uint16_t scanTime, const uint32_t type, const uint8_t flags);
