@@ -280,6 +280,7 @@ namespace PluginHost {
 
     public:
         void* Root(uint32_t& pid, const uint32_t waitTime, const string className, const uint32_t interface, const uint32_t version = ~0);
+        void* Root(const string& address, uint32_t& pid, const uint32_t waitTime, const string className, const uint32_t interface, const uint32_t version = ~0);
     };
 } // namespace PluginHost
 
