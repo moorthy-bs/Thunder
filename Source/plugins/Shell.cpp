@@ -28,143 +28,6 @@ ENUM_CONVERSION_END(PluginHost::IShell::reason)
 
 namespace PluginHost
 {
-    class EXTERNAL Object : public Core::JSON::Container {
-    private:
-        class RootObject : public Core::JSON::Container {
-        private:
-            RootObject(const RootObject&) = delete;
-            RootObject& operator=(const RootObject&) = delete;
-
-        public:
-            RootObject()
-                : Config(false)
-            {
-                Add(_T("root"), &Config);
-            }
-            virtual ~RootObject() {}
-
-        public:
-            Core::JSON::String Config;
-        };
-
-    public:
-
-        enum class ModeType {
-            OFF,
-            LOCAL,
-            CONTAINER,
-            DISTRIBUTED
-        };
-
-        Object()
-            : Locator()
-            , User()
-            , Group()
-            , Threads(1)
-            , OutOfProcess(true)
-            , Mode(ModeType::LOCAL)
-            , Configuration(false)
-        {
-            Add(_T("locator"), &Locator);
-            Add(_T("user"), &User);
-            Add(_T("group"), &Group);
-            Add(_T("threads"), &Threads);
-            Add(_T("outofprocess"), &OutOfProcess);
-            Add(_T("mode"), &Mode);
-            Add(_T("configuration"), &Configuration);
-        }
-        Object(const IShell* info)
-            : Locator()
-            , User()
-            , Group()
-            , Threads()
-            , OutOfProcess(true)
-            , Mode(ModeType::LOCAL)
-            , Configuration(false)
-        {
-            Add(_T("locator"), &Locator);
-            Add(_T("user"), &User);
-            Add(_T("group"), &Group);
-            Add(_T("threads"), &Threads);
-            Add(_T("outofprocess"), &OutOfProcess);
-            Add(_T("mode"), &Mode);
-            Add(_T("configuration"), &Configuration);
-
-            RootObject config;
-            config.FromString(info->ConfigLine());
-
-            if (config.Config.IsSet() == true) {
-                // Yip we want to go out-of-process
-                Object settings;
-                settings.FromString(config.Config.Value());
-                *this = settings;
-
-                if (Locator.Value().empty() == true) {
-                    Locator = info->Locator();
-                }
-            }
-        }
-        Object(const Object& copy)
-            : Locator(copy.Locator)
-            , User(copy.User)
-            , Group(copy.Group)
-            , Threads(copy.Threads)
-            , OutOfProcess(true)
-            , Mode(copy.Mode)
-            , Configuration(copy.Configuration)
-        {
-            Add(_T("locator"), &Locator);
-            Add(_T("user"), &User);
-            Add(_T("group"), &Group);
-            Add(_T("threads"), &Threads);
-            Add(_T("outofprocess"), &OutOfProcess);
-            Add(_T("mode"), &Mode);
-            Add(_T("configuration"), &Configuration);
-        }
-        virtual ~Object()
-        {
-        }
-
-        Object& operator=(const Object& RHS)
-        {
-
-            Locator = RHS.Locator;
-            User = RHS.User;
-            Group = RHS.Group;
-            Threads = RHS.Threads;
-            OutOfProcess = RHS.OutOfProcess;
-            Mode = RHS.Mode;
-            Configuration = RHS.Configuration;
-
-            return (*this);
-        }
-
-        RPC::Object::HostType HostType() const {
-            RPC::Object::HostType result = RPC::Object::HostType::LOCAL;
-            switch( Mode.Value() ) {
-                case ModeType::CONTAINER :
-                    result = RPC::Object::HostType::CONTAINER;
-                    break;
-                case ModeType::DISTRIBUTED:
-                    result = RPC::Object::HostType::DISTRIBUTED;
-                    break;
-                default:
-                    result = RPC::Object::HostType::LOCAL;
-                    break;
-            }
-            return result;
-        }
-
-    public:
-        Core::JSON::String Locator;
-        Core::JSON::String User;
-        Core::JSON::String Group;
-        Core::JSON::DecUInt8 Threads;
-        Core::JSON::Boolean OutOfProcess;
-        Core::JSON::EnumType<ModeType> Mode; 
-        Core::JSON::String Configuration; 
-    };
-
     void* IShell::Root(uint32_t & pid, const uint32_t waitTime, const string className, const uint32_t interface, const uint32_t version)
     {
         void* result = nullptr;
@@ -223,7 +86,7 @@ namespace PluginHost
         return (result);
     }
 
-
+    // Method for starting a remote process with a diffrent connector
     void* IShell::Root(const string& address, uint32_t& pid, const uint32_t waitTime, const string className, const uint32_t interface, const uint32_t version) {
         ICOMLink* handler(COMLink());
         void* result = nullptr;
@@ -245,6 +108,7 @@ namespace PluginHost
                 rootObject.Group.Value(),
                 rootObject.Threads.Value(),
                 RPC::Object::HostType::DISTRIBUTED,
+                address,
                 rootObject.Configuration.Value());
 
             result = handler->Instantiate(definition, waitTime, pid, ClassName(), Callsign());
