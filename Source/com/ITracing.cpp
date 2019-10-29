@@ -28,6 +28,12 @@ namespace ProxyStub {
             response.Number<uint32_t>(message->Parameters().Implementation<RPC::IRemoteConnection>()->RemoteId());
         },
         [](Core::ProxyType<Core::IPCChannel>& channel VARIABLE_IS_NOT_USED, Core::ProxyType<RPC::InvokeMessage>& message) {
+            // virtual string Source() = 0
+            RPC::Data::Frame::Writer response(message->Response().Writer());
+
+            response.Text(message->Parameters().Implementation<RPC::IRemoteConnection>()->Source());
+        },
+        [](Core::ProxyType<Core::IPCChannel>& channel VARIABLE_IS_NOT_USED, Core::ProxyType<RPC::InvokeMessage>& message) {
             // virtual void* Instantiate(const uint32_t waitTime, const string& className, const uint32_t interfaceId, const uint32_t version) = 0;
             RPC::Data::Frame::Reader parameters(message->Parameters().Reader());
             RPC::Data::Frame::Writer response(message->Response().Writer());
@@ -188,6 +194,18 @@ namespace ProxyStub {
             }
 
             return (id);
+        }
+        virtual string Source() const
+        {
+            string source = 0;
+
+            IPCMessage newMessage(BaseClass::Message(3));
+
+            if (Invoke(newMessage) == Core::ERROR_NONE) {
+                source = newMessage->Response().Reader().Text();
+            }
+
+            return (source);
         }
         virtual void* Aquire(const uint32_t waitTime, const string& className, const uint32_t interfaceId, const uint32_t version)
         {

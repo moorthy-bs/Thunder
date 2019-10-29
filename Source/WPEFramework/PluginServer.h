@@ -1434,6 +1434,7 @@ namespace PluginHost {
                 , _subSystems(this)
                 , _authenticationHandler(nullptr)
             {
+
             }
             ~ServiceMap()
             {

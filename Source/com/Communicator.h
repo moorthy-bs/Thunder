@@ -289,6 +289,7 @@ namespace RPC {
         virtual uint32_t Parent() const = 0;
         virtual uint32_t Id() const = 0;
         virtual uint32_t RemoteId() const = 0;
+        virtual string Source() const = 0;
         virtual void* Aquire(const uint32_t waitTime, const string& className, const uint32_t interfaceId, const uint32_t version) = 0;
         virtual void Terminate() = 0;
 
@@ -343,6 +344,9 @@ namespace RPC {
             virtual uint32_t Parent() const override;
             virtual uint32_t Id() const override;
             virtual uint32_t RemoteId() const override;
+            string Source() const override {
+                return _channel->Source().ReceivedNode().HostName();
+            }
             virtual void* Aquire(const uint32_t waitTime, const string& className, const uint32_t interfaceId, const uint32_t version) override;
             virtual void Terminate() override;
 

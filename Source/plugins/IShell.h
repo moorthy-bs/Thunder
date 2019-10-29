@@ -152,6 +152,9 @@ namespace PluginHost {
         //! DataPath: <config:datapath>/<plugin:classname>/
         virtual string DataPath() const = 0;
 
+        //! SystemPath: <config:systempath>/<plugin:classname>/
+        virtual string SystemPath() const = 0;
+
         //! VolatilePath: <config:volatilepath>/<plugin:callsign>/
         virtual string ProxyStubPath() const = 0;
 

@@ -129,9 +129,14 @@ namespace PluginHost {
                 return (_dataPath);
             }
 
+            inline const string& SystemPath() const
+            {
+                return (_dataPath);
+            }
+
             inline const string& ProxyStubPath() const
             {
-                return (_baseConfig.ProxyStubPath());
+                return _baseConfig.SystemPath();
             }
 
             inline void Update(const Plugin::Config& config)
