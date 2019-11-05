@@ -11,7 +11,7 @@ namespace Exchange {
 
         virtual ~IMinimalPlugin() {}
 
-        virtual string Greet(const string& name) = 0;
+        virtual uint32_t Greet(const string& name, string& greeting /* @out */) = 0;
 
     };
 }

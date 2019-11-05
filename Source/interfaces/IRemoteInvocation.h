@@ -21,7 +21,8 @@ namespace Exchange {
             uint32_t threads;
         };
 
-        virtual void Start(const string callingDevice, const ProgramParams& params) = 0;
+        virtual uint32_t Instantiate(const uint16_t port, const ProgramParams& params) = 0;
+        virtual uint32_t Terminate(uint32_t connectionId) = 0;
     };
 }
 }

@@ -33,6 +33,7 @@ namespace RPC {
             , _group()
             , _threads()
             , _type(HostType::LOCAL)
+            , _remoteAddress("")
             , _configuration()
         {
         }
@@ -46,7 +47,7 @@ namespace RPC {
             , _group(copy._group)
             , _threads(copy._threads)
             , _type(copy._type)
-            , _hostAddress(copy._hostAddress)
+            , _remoteAddress(copy._remoteAddress)
             , _configuration(copy._configuration)
         {
         }
@@ -59,6 +60,7 @@ namespace RPC {
             const string& group,
             const uint8_t threads,
             const HostType type,
+            const string& remoteAddress,
             const string& configuration)
             : _callsign(callsign)
             , _locator(locator)
@@ -69,31 +71,7 @@ namespace RPC {
             , _group(group)
             , _threads(threads)
             , _type(type)
-            , _hostAddress("")
-            , _configuration(configuration)
-        {
-        }
-        Object(const string callsign,
-            const string& locator,
-            const string& className,
-            const uint32_t interface,
-            const uint32_t version,
-            const string& user,
-            const string& group,
-            const uint8_t threads,
-            const HostType type,
-            const string& hostAddress,
-            const string& configuration)
-            : _callsign(callsign)
-            , _locator(locator)
-            , _className(className)
-            , _interface(interface)
-            , _version(version)
-            , _user(user)
-            , _group(group)
-            , _threads(threads)
-            , _type(type)
-            , _hostAddress(hostAddress)
+            , _remoteAddress(remoteAddress)
             , _configuration(configuration)
         {
         }
@@ -112,7 +90,7 @@ namespace RPC {
             _group = RHS._group;
             _threads = RHS._threads;
             _type = RHS._type;
-            _hostAddress = RHS._hostAddress;
+            _remoteAddress = RHS._remoteAddress;
             _configuration = RHS._configuration;
 
             return (*this);
@@ -155,9 +133,9 @@ namespace RPC {
         {
             return (_type);
         }
-        inline string HostAddress() const
+        inline string RemoteAddress() const
         {
-            return (_hostAddress);
+            return (_remoteAddress);
         }
         inline const string& Configuration() const
         {
@@ -174,7 +152,7 @@ namespace RPC {
         string _group;
         uint8_t _threads;
         HostType _type;
-        string _hostAddress;
+        string _remoteAddress;
         string _configuration;
     };
 
@@ -288,8 +266,8 @@ namespace RPC {
 
         virtual uint32_t Parent() const = 0;
         virtual uint32_t Id() const = 0;
-        virtual uint32_t RemoteId() const = 0;
-        virtual string Source() const = 0;
+        virtual string RemoteId() const = 0;
+        virtual string LocalId() const = 0;
         virtual void* Aquire(const uint32_t waitTime, const string& className, const uint32_t interfaceId, const uint32_t version) = 0;
         virtual void Terminate() = 0;
 
@@ -343,10 +321,8 @@ namespace RPC {
             virtual void* QueryInterface(const uint32_t id) override;
             virtual uint32_t Parent() const override;
             virtual uint32_t Id() const override;
-            virtual uint32_t RemoteId() const override;
-            string Source() const override {
-                return _channel->Source().ReceivedNode().HostName();
-            }
+            virtual string RemoteId() const override;
+            virtual string LocalId() const override;
             virtual void* Aquire(const uint32_t waitTime, const string& className, const uint32_t interfaceId, const uint32_t version) override;
             virtual void Terminate() override;
 
@@ -479,7 +455,7 @@ namespace RPC {
             }
 
             void Terminate() override;
-            uint32_t RemoteId() const override;
+            string RemoteId() const override;
 
         private:
             uint32_t _id;
@@ -601,8 +577,8 @@ namespace RPC {
             RemoteHost(const RemoteHost&) = delete;
             RemoteHost& operator=(const RemoteHost&) = delete;
 
-        private:
-            RemoteHost(const string& remoteNode);
+        public:
+            RemoteHost(const string& remoteAddress);
 
         public:
             virtual ~RemoteHost()
@@ -610,18 +586,14 @@ namespace RPC {
                 TRACE_L1("Destructor for RemoteHost process for %d", Id());
             }
 
-            uint32_t RemoteId() const override
-            {
-                return _pid;
-            }
-
+            
         private:
             void Launch(const Object& instance, const Config& config) override;
+            void Terminate() override;
 
         private:
-            uint32_t _pid;
-            const string _remoteNode;
-            Core::ProxyType<Core::IPCChannelType<Core::SocketPort, ChannelLink>> _hostChannel;
+            uint32_t _connectionId;
+            string _remoteAddress;
         };
 
         static RemoteProcess* CreateProcess(const Object& instance, const Config& config)
@@ -633,7 +605,7 @@ namespace RPC {
                 result = Core::Service<LocalRemoteProcess>::Create<RemoteProcess>();
                 break;
             case Object::HostType::DISTRIBUTED:
-                result = Core::Service<RemoteHost>::Create<RemoteProcess>(instance.HostAddress());
+                result = Core::Service<RemoteHost>::Create<RemoteProcess>(instance.RemoteAddress());
                 break;
             case Object::HostType::CONTAINER:
 #ifdef PROCESSCONTAINERS_ENABLED
@@ -961,7 +933,7 @@ namespace RPC {
                     ASSERT(result == nullptr);
 
                     // See if we have something we can return right away, if it has been requested..
-                    result = _parent.Aquire(info.ClassName(), info.InterfaceId(), info.VersionId());
+                    result = _parent.Aquire(channel->Extension().Id(), info.ClassName(), info.InterfaceId(), info.VersionId());
 
                     if (result != nullptr) {
                         Core::ProxyType<Core::IPCChannel> baseChannel(channel);
@@ -1013,6 +985,10 @@ namespace RPC {
             bool IsRegistered() const
             {
                 return (_connectionMap != nullptr);
+            }
+
+            inline uint32_t Id() const {
+                return _id;
             }
 
         private:
@@ -1240,7 +1216,7 @@ namespace RPC {
                 loop2++;
             }
         }
-        virtual void* Aquire(const string& /* className */, const uint32_t /* interfaceId */, const uint32_t /* version */)
+        virtual void* Aquire(uint32_t id, const string& /* className */, const uint32_t /* interfaceId */, const uint32_t /* version */)
         {
             return (nullptr);
         }
