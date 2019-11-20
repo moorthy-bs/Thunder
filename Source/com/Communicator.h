@@ -1,6 +1,8 @@
 #ifndef __COM_PROCESSLAUNCH_H
 #define __COM_PROCESSLAUNCH_H
 
+#include <sys/resource.h>
+
 #include "Administrator.h"
 #include "ITracing.h"
 #include "IUnknown.h"
@@ -442,6 +444,12 @@ namespace RPC {
                 Core::Process fork(false);
 
                 fork.Launch(options, &_id);
+
+                // Increase priority level of out-of-process plugin till it reaches completion.
+                // Allowing quicker loading of the plugins
+                if (setpriority(PRIO_PROCESS, _id, getpriority(PRIO_PROCESS, _id) - 1) != 0) {
+                    TRACE_L1("Not able to set process nice priority level");
+                }
             }
 
             void Terminate() override;
@@ -853,6 +861,12 @@ namespace RPC {
             void Activated(RPC::IRemoteConnection* connection)
             {
                 std::list<RPC::IRemoteConnection::INotification*>::iterator index(_observers.begin());
+
+                // Decrease priority level of out-of-process plugin, plugin is currently activated.
+                // Allowing quicker loading of the plugins
+                if (setpriority(PRIO_PROCESS, connection->RemoteId(), getpriority(PRIO_PROCESS, connection->RemoteId()) + 1) != 0) {
+                    TRACE_L1("Not able to set process nice priority level");
+                }
 
                 while (index != _observers.end()) {
                     (*index)->Activated(connection);
