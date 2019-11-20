@@ -11,26 +11,26 @@
 // ---- Referenced classes and types ----
 
 // ---- Helper types and constants ----
-#define TRACE(CATEGORY, PARAMETERS)                                                    \
-    if (Trace::TraceType<CATEGORY, &Core::System::MODULE_NAME>::IsEnabled() == true) { \
-        CATEGORY __data__ PARAMETERS;                                                  \
-        Trace::TraceType<CATEGORY, &Core::System::MODULE_NAME> __message__(__data__);  \
-        Trace::TraceUnit::Instance().Trace(                                            \
-            __FILE__,                                                                  \
-            __LINE__,                                                                  \
-            typeid(*this).name(),                                                      \
-            &__message__);                                                             \
+#define TRACE(CATEGORY, PARAMETERS)                                                                                \
+    if (WPEFramework::Trace::TraceType<CATEGORY, &WPEFramework::Core::System::MODULE_NAME>::IsEnabled() == true) { \
+        CATEGORY __data__ PARAMETERS;                                                                              \
+        WPEFramework::Trace::TraceType<CATEGORY, &WPEFramework::Core::System::MODULE_NAME> __message__(__data__);  \
+        WPEFramework::Trace::TraceUnit::Instance().Trace(                                                          \
+            __FILE__,                                                                                              \
+            __LINE__,                                                                                              \
+            typeid(*this).name(),                                                                                  \
+            &__message__);                                                                                         \
     }
 
-#define TRACE_GLOBAL(CATEGORY, PARAMETERS)                                             \
-    if (Trace::TraceType<CATEGORY, &Core::System::MODULE_NAME>::IsEnabled() == true) { \
-        CATEGORY __data__ PARAMETERS;                                                  \
-        Trace::TraceType<CATEGORY, &Core::System::MODULE_NAME> __message__(__data__);  \
-        Trace::TraceUnit::Instance().Trace(                                            \
-            __FILE__,                                                                  \
-            __LINE__,                                                                  \
-            "<<Global>>",                                                              \
-            &__message__);                                                             \
+#define TRACE_GLOBAL(CATEGORY, PARAMETERS)                                                                         \
+    if (WPEFramework::Trace::TraceType<CATEGORY, &WPEFramework::Core::System::MODULE_NAME>::IsEnabled() == true) { \
+        CATEGORY __data__ PARAMETERS;                                                                              \
+        WPEFramework::Trace::TraceType<CATEGORY, &WPEFramework::Core::System::MODULE_NAME> __message__(__data__);  \
+        WPEFramework::Trace::TraceUnit::Instance().Trace(                                                          \
+            __FILE__,                                                                                              \
+            __LINE__,                                                                                              \
+            "<<Global>>",                                                                                          \
+            &__message__);                                                                                         \
     }
 
 // ---- Helper functions ----
@@ -44,7 +44,6 @@ namespace Trace {
         template <typename CONTROLCATEGORY, const char** CONTROLMODULE>
         class TraceControl : public ITraceControl {
         private:
-
         public:
             TraceControl(const TraceControl<CONTROLCATEGORY, CONTROLMODULE>&) = delete;
             TraceControl<CONTROLCATEGORY, CONTROLMODULE>& operator=(const TraceControl<CONTROLCATEGORY, CONTROLMODULE>&) = delete;
@@ -105,7 +104,6 @@ namespace Trace {
             const string m_CategoryName;
             uint8_t m_Enabled;
         };
-
 
     public:
         TraceType(const TraceType<CATEGORY, MODULENAME>&) = delete;
